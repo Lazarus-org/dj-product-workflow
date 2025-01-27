@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Graph - {{ product_workflow.product.name }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a202c;
+            color: #f7fafc;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #e53e3e;
+        }
+        .workflow-container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #4a5568;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #2d3748, #1a202c);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            position: relative;
+        }
+        .tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #f7fafc;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            max-width: 250px; /* Set a max-width to prevent overflow */
+            word-wrap: break-word;
+            overflow-y: auto;
+            max-height: 150px; /* Limit the height */
+        }
+        .tooltip.active {
+            opacity: 1;
+            transform: scale(1.1);
+        }
+        .node {
+            fill: #e53e3e;
+            stroke: #c53030;
+            stroke-width: 2;
+            cursor: pointer;
+            transition: transform 0.3s ease, fill 0.3s ease;
+        }
+        .node.current-step {
+            fill: #fc8181;
+            stroke: #e53e3e;
+        }
+        .node:hover {
+            fill: #feb2b2;
+            stroke: #fc8181;
+            transform: scale(1.15);
+        }
+        .node.clicked {
+            stroke: #f56565;
+            animation: glow 1s infinite alternate;
+        }
+        @keyframes glow {
+            0% {
+                box-shadow: 0 0 10px 2px rgba(229, 62, 62, 0.6);
+                stroke-width: 2;
+            }
+            100% {
+                box-shadow: 0 0 20px 5px rgba(229, 62, 62, 1);
+                stroke-width: 4;
+            }
+        }
+        .link {
+            stroke: #e53e3e;
+            stroke-width: 2;
+            marker-end: url(#arrowhead);
+        }
+        .link-label {
+            font-size: 10px;
+            fill: #f7fafc;
+            text-anchor: middle;
+            pointer-events: none;
+        }
+        .node-label {
+            font-size: 12px;
+            fill: #f7fafc;
+            text-anchor: middle;
+        }
+    </style>
+</head>
+<body>
+    <h1>Product: {{ product_workflow.product.name }}</h1>
+    <h2>Workflow: {{ product_workflow.workflow.name }}</h2>
+
+    <div class="workflow-container">
+        <svg id="workflow-graph" width="100%" height="100%"></svg>
+        <div class="tooltip" id="tooltip"></div>
+    </div>
+
+    <!-- D3.js Library -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const data = {
+                nodes: [
+                    {% for step in steps %}
+                        { id: "{{ step.id }}", name: "{{ step.name }}", description: "{{ step.description }}", current: {% if step == product_workflow.current_step %}true{% else %}false{% endif %} },
+                    {% endfor %}
+                ],
+                links: [
+                    {% for transition in transitions %}
+                        { source: "{{ transition.from_step.id }}", target: "{{ transition.to_step.id }}", label: "{{ transition.name }}" },
+                    {% endfor %}
+                ]
+            };
+
+            const width = document.querySelector(".workflow-container").clientWidth;
+            const height = document.querySelector(".workflow-container").clientHeight;
+
+            const svg = d3.select("#workflow-graph")
+                .attr("viewBox", [0, 0, width, height])
+                .call(
+                    d3.zoom()
+                        .scaleExtent([0.5, 2])
+                        .on("zoom", (event) => svgGroup.attr("transform", event.transform))
+                );
+
+            const svgGroup = svg.append("g");
+
+            const tooltip = document.getElementById("tooltip");
+
+            // Arrowhead marker
+            svg.append("defs").append("marker")
+                .attr("id", "arrowhead")
+                .attr("viewBox", "0 -5 10 10")
+                .attr("refX", 12)
+                .attr("refY", 0)
+                .attr("markerWidth", 6)
+                .attr("markerHeight", 6)
+                .attr("orient", "auto")
+                .append("path")
+                .attr("d", "M0,-5L10,0L0,5")
+                .attr("fill", "#e53e3e");
+
+            const simulation = d3.forceSimulation(data.nodes)
+                .force("link", d3.forceLink(data.links).id(d => d.id).distance(150))
+                .force("charge", d3.forceManyBody().strength(-500))
+                .force("center", d3.forceCenter(width / 2, height / 2));
+
+            // Draw links
+            const link = svgGroup.append("g")
+                .selectAll("line")
+                .data(data.links)
+                .enter()
+                .append("line")
+                .attr("class", "link");
+
+            // Draw link labels
+            const linkLabels = svgGroup.append("g")
+                .selectAll("text")
+                .data(data.links)
+                .enter()
+                .append("text")
+                .attr("class", "link-label")
+                .text(d => d.label);
+
+            // Draw nodes
+            const node = svgGroup.append("g")
+                .selectAll("circle")
+                .data(data.nodes)
+                .enter()
+                .append("circle")
+                .attr("class", d => `node ${d.current ? "current-step" : ""}`)
+                .attr("r", 20)
+                .on("mouseover", (event, d) => {
+                    tooltip.classList.add("active");
+                    tooltip.innerHTML = `<strong>${d.name}</strong><br>${d.description}`;
+                })
+                .on("mousemove", (event) => {
+                    // Keep tooltip within boundaries
+                    const tooltipWidth = tooltip.offsetWidth;
+                    const tooltipHeight = tooltip.offsetHeight;
+                    const maxX = window.innerWidth - tooltipWidth - 10;
+                    const maxY = window.innerHeight - tooltipHeight - 10;
+
+                    const posX = Math.min(event.pageX + 10, maxX);
+                    const posY = Math.min(event.pageY + 10, maxY);
+
+                    tooltip.style.left = `${posX}px`;
+                    tooltip.style.top = `${posY}px`;
+                })
+                .on("mouseout", () => {
+                    tooltip.classList.remove("active");
+                })
+                .on("click", function (event, d) {
+                    d3.selectAll(".node").classed("clicked", false);
+                    d3.select(this).classed("clicked", true);
+                })
+                .call(
+                    d3.drag()
+                        .on("start", dragstarted)
+                        .on("drag", dragged)
+                        .on("end", dragended)
+                );
+
+            // Add node labels
+            const nodeLabels = svgGroup.append("g")
+                .selectAll("text")
+                .data(data.nodes)
+                .enter()
+                .append("text")
+                .attr("class", "node-label")
+                .attr("dy", 4)
+                .text(d => d.name);
+
+            simulation.on("tick", () => {
+                link.attr("x1", d => d.source.x)
+                    .attr("y1", d => d.source.y)
+                    .attr("x2", d => d.target.x)
+                    .attr("y2", d => d.target.y);
+
+                linkLabels.attr("x", d => (d.source.x + d.target.x) / 2)
+                    .attr("y", d => (d.source.y + d.target.y) / 2);
+
+                node.attr("cx", d => d.x)
+                    .attr("cy", d => d.y);
+
+                nodeLabels.attr("x", d => d.x)
+                    .attr("y", d => d.y);
+            });
+
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+        });
+    </script>
+</body>
+</html>
