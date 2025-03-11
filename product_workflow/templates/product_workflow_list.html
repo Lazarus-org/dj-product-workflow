@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Workflows</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a202c;
+            color: #f7fafc;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #e53e3e;
+        }
+        .workflow-list {
+            max-width: 800px;
+            margin: 20px auto;
+            background: #2d3748;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        }
+        .workflow-item {
+            background: #1a202c;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 5px solid #e53e3e;
+            transition: background 0.3s ease;
+        }
+        .workflow-item:hover {
+            background: #4a5568;
+        }
+        a {
+            text-decoration: none;
+            color: #f7fafc;
+            font-weight: bold;
+            display: block;
+        }
+        .workflow-meta {
+            font-size: 14px;
+            color: #cbd5e0;
+            margin-top: 5px;
+        }
+        .no-workflows {
+            font-size: 18px;
+            color: #cbd5e0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Product Workflows</h1>
+
+    <div class="workflow-list">
+        {% if product_workflows %}
+            {% for workflow in product_workflows %}
+                <div class="workflow-item">
+                    <a href="{% url 'product_workflow_detail' product_workflow_id=workflow.id %}">
+                        {{ workflow.product.name }} - {{ workflow.workflow.name }}
+                    </a>
+                    <div class="workflow-meta">
+                        Created on: {{ workflow.created_at|date:"F j, Y" }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="no-workflows">No product workflows available.</p>
+        {% endif %}
+    </div>
+
+</body>
+</html>
