@@ -1,13 +1,54 @@
-from django.shortcuts import render, get_object_or_404
-from .models import ProductWorkflow, Transition
+from django.views.generic import View, DetailView, ListView
+from product_workflow.models import ProductWorkflow, Transition
+from product_workflow.settings.conf import config
 
-def product_workflow_detail(request, product_workflow_id):
-    product_workflow = get_object_or_404(ProductWorkflow, id=product_workflow_id)
-    steps = product_workflow.workflow.steps.all().order_by('order')
-    transitions = Transition.objects.filter(workflow=product_workflow.workflow)
 
-    return render(request, 'detail.html', {
-        'product_workflow': product_workflow,
-        'steps': steps,
-        'transitions': transitions,
-    })
+class BaseProductWorkflowView(config.auth_mixin_class or object, View):
+    """
+    A base view for Product Workflow views.
+    It dynamically applies authentication based on settings.
+    """
+
+    pass
+
+
+class ProductWorkflowListView(BaseProductWorkflowView, ListView):
+    """
+    Displays a list of all product workflows.
+    """
+
+    model = ProductWorkflow
+    queryset = ProductWorkflow.objects.select_related("product", "workflow").all()
+    template_name = "product_workflow_list.html"
+    context_object_name = "product_workflows"
+    ordering = config.view_ordering_fields
+
+
+class ProductWorkflowDetailView(BaseProductWorkflowView, DetailView):
+    """
+    Displays the details of a specific product workflow, including its steps and transitions.
+    """
+
+    model = ProductWorkflow
+    queryset = (
+        ProductWorkflow.objects.select_related("product", "workflow", "current_step")
+        .prefetch_related("workflow__steps")
+        .all()
+    )
+    template_name = "product_workflow_detail.html"
+    context_object_name = "product_workflow"
+    pk_url_kwarg = "product_workflow_id"
+
+    def get_context_data(self, **kwargs):
+        """
+        Extends the default context with related steps and transitions.
+        """
+        context = super().get_context_data(**kwargs)
+        product_workflow = self.object
+
+        context["steps"] = product_workflow.workflow.steps.all().order_by("order")
+        context["transitions"] = Transition.objects.select_related(
+            "from_step", "to_step"
+        ).filter(workflow=product_workflow.workflow)
+
+        return context
