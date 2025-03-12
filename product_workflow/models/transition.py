@@ -111,6 +111,11 @@ class Transition(TimeStampModel):
                 }
             )
 
+        if self.from_step_id == self.to_step_id:
+            raise ValidationError(
+                {"to_step": _("The from step and to step cannot be the same.")}
+            )
+
         # Fetch the workflows from the steps
         from_step_workflow = getattr(self.from_step, "workflow", None)
         to_step_workflow = getattr(self.to_step, "workflow", None)

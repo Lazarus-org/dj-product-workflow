@@ -132,6 +132,26 @@ class TestTransition:
             transition.clean()
         assert "Both 'From Step' and 'To Step' must be specified" in str(exc_info.value)
 
+    def test_clean_same_steps(self, workflow, step):
+        """
+        Test that the clean method raises ValidationError when steps are the same.
+
+        Creates a Transition with one step as from_step and to_step and verifies the error.
+
+        Args:
+        ----
+            workflow: Fixture providing a Workflow instance.
+            step: Fixture providing a From Step instance.
+
+        Asserts:
+        --------
+            A ValidationError is raised with the expected message.
+        """
+        transition = Transition(workflow=workflow, from_step=step, to_step=step)
+        with pytest.raises(ValidationError) as exc_info:
+            transition.clean()
+        assert "The from step and to step cannot be the same." in str(exc_info.value)
+
     def test_clean_mismatched_workflows(self, step, step_from_different_workflow):
         """
         Test that the clean method raises ValidationError for mismatched workflows.
@@ -150,9 +170,8 @@ class TestTransition:
         transition = Transition(from_step=step, to_step=step_from_different_workflow)
         with pytest.raises(ValidationError) as exc_info:
             transition.clean()
-        assert (
-            "'From Step' and 'To Step' must belong to the same workflow"
-            in str(exc_info.value)
+        assert "'From Step' and 'To Step' must belong to the same workflow" in str(
+            exc_info.value
         )
 
     def test_clean_duplicate_transition(self, transition, step, another_step, workflow):

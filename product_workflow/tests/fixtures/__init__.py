@@ -4,6 +4,7 @@ from .models import (
     product,
     product_workflow,
     workflow,
+    another_workflow,
     step,
     another_step,
     step_from_different_workflow,

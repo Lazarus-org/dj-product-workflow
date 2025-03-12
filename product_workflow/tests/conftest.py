@@ -12,6 +12,7 @@ from product_workflow.tests.fixtures import (
     step,
     another_step,
     workflow,
+    another_workflow,
     transition,
     step_from_different_workflow,
     another_product_workflow,
