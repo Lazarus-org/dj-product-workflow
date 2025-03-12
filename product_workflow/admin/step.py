@@ -14,6 +14,7 @@ class StepAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     )
+    list_display_links = ("id", "name")
     search_fields = ("name", "description", "workflow__name")
     list_filter = ("workflow", "created_at", "updated_at")
     date_hierarchy = "created_at"
