@@ -1,5 +1,6 @@
 from django.urls import path
-from .views import ProductWorkflowListView, ProductWorkflowDetailView
+
+from .views import ProductWorkflowDetailView, ProductWorkflowListView
 
 urlpatterns = [
     path(

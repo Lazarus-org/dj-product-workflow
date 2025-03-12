@@ -5,14 +5,14 @@ from product_workflow.mixins.models.timestamp import TimeStampModel
 
 
 class Workflow(TimeStampModel):
-    """
-    Represents a workflow process consisting of multiple steps.
+    """Represents a workflow process consisting of multiple steps.
 
     Attributes:
         name (str): Unique name identifier for the workflow
         description (str): Detailed explanation of the workflow's purpose and process
         created_at (datetime): Auto-generated creation timestamp
         updated_at (datetime): Auto-generated last modification timestamp
+
     """
 
     name = models.CharField(
@@ -30,7 +30,7 @@ class Workflow(TimeStampModel):
     )
 
     class Meta:
-        ordering = ['name']
+        ordering = ["name"]
         verbose_name = _("Workflow")
         verbose_name_plural = _("Workflows")
 

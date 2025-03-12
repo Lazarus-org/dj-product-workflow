@@ -6,8 +6,8 @@ from product_workflow.mixins.models.timestamp import TimeStampModel
 
 
 class ProductWorkflow(TimeStampModel):
-    """
-    Represents the association between a product and a workflow, tracking its progress.
+    """Represents the association between a product and a workflow, tracking
+    its progress.
 
     Attributes:
         product (Product): The product linked to this workflow.
@@ -15,6 +15,7 @@ class ProductWorkflow(TimeStampModel):
         current_step (Step): The current step in the workflow for this product.
         created_at (datetime): Auto-generated creation timestamp.
         updated_at (datetime): Auto-generated last modification timestamp.
+
     """
 
     product = models.ForeignKey(
@@ -57,8 +58,7 @@ class ProductWorkflow(TimeStampModel):
         verbose_name_plural = _("Product Workflows")
 
     def __str__(self) -> str:
-        """
-        Returns a string representation of the product workflow.
+        """Returns a string representation of the product workflow.
 
         The representation follows the format:
             "<product_id> - <workflow_id> (Current Step: <current_step_name>)"
@@ -70,6 +70,7 @@ class ProductWorkflow(TimeStampModel):
 
         Returns:
             str: A human-readable representation of the product workflow.
+
         """
         current_step_name: str = (
             getattr(self.current_step, "name", "None")
@@ -79,8 +80,8 @@ class ProductWorkflow(TimeStampModel):
         return f"Product ID:{self.product_id} - Workflow ID:{self.workflow_id} (Current Step: {current_step_name})"
 
     def clean(self) -> None:
-        """
-        Validates that a product can only be associated with a workflow once.
+        """Validates that a product can only be associated with a workflow
+        once.
 
         This method enforces the uniqueness constraint at the application level,
         preventing duplicate `(product, workflow)` pairs before database insertion.
@@ -93,6 +94,7 @@ class ProductWorkflow(TimeStampModel):
 
         Raises:
             ValidationError: If a duplicate `ProductWorkflow` entry exists.
+
         """
         super().clean()
 

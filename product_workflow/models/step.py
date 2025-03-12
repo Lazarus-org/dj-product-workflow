@@ -6,8 +6,7 @@ from product_workflow.mixins.models.timestamp import TimeStampModel
 
 
 class Step(TimeStampModel):
-    """
-    Represents an individual step within a workflow process.
+    """Represents an individual step within a workflow process.
 
     Attributes:
         workflow (Workflow): Workflow containing this step
@@ -16,6 +15,7 @@ class Step(TimeStampModel):
         order (int): Position of the step in workflow execution sequence
         created_at (datetime): Auto-generated creation timestamp
         updated_at (datetime): Auto-generated last modification timestamp
+
     """
 
     workflow = models.ForeignKey(
@@ -67,15 +67,12 @@ class Step(TimeStampModel):
         ordering = ["workflow", "order"]
 
     def __str__(self):
-        """
-        Returns a string representation of the step
-        """
+        """Returns a string representation of the step."""
         return f"{self.name} (Order: {self.order})"
 
     def clean(self):
-        """
-        Custom validation to enforce model constraints beyond database-level checks.
-        """
+        """Custom validation to enforce model constraints beyond database-level
+        checks."""
         super().clean()
 
         # Validate unique step name per workflow

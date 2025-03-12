@@ -5,14 +5,14 @@ from product_workflow.mixins.models.timestamp import TimeStampModel
 
 
 class Product(TimeStampModel):
-    """
-    Represents a product in the system.
+    """Represents a product in the system.
 
     Attributes:
         name (str): Unique name identifier for the product
         description (str): Detailed information about the product features and specifications
         created_at (datetime): Auto-generated creation timestamp
         updated_at (datetime): Auto-generated last modification timestamp
+
     """
 
     name = models.CharField(
@@ -33,6 +33,6 @@ class Product(TimeStampModel):
         return self.name
 
     class Meta:
-        ordering = ['name']
+        ordering = ["name"]
         verbose_name = _("Product")
         verbose_name_plural = _("Products")
