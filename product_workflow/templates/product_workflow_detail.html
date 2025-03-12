@@ -29,7 +29,7 @@
         }
         .workflow-container {
             width: 90%;
-            height: 600px;
+            height: 72vh;
             border-radius: 20px;
             box-shadow: 0 0px 10px rgba(0, 0, 0, 0.4);
             overflow: hidden;
@@ -62,7 +62,7 @@
             transition: transform 0.3s ease, fill 0.3s ease, stroke 0.3s ease;
         }
         .node.current-step {
-            fill: #FBEAFF;
+            fill: #b5abb7;
             stroke: #f1d4f7;
         }
         .node:hover {
@@ -218,9 +218,8 @@
                 .text(d => d.condition ? `${d.label} ${truncateCondition(d.condition)}` : d.label);
 
             function truncateCondition(condition) {
-                const words = condition.split(" ");
-                if (words.length > 10) {
-                    return words.slice(0, 5).join(" ") + "...";
+                if (condition.length > 32) {
+                    return condition.substring(0, 32) + "...";
                 }
                 return condition;
             }
