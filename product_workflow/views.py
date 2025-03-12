@@ -28,7 +28,9 @@ class ProductWorkflowDetailView(BaseProductWorkflowView, DetailView):
 
     model = ProductWorkflow
     queryset = (
-        ProductWorkflow.objects.select_related("product", "workflow", "first_step")
+        ProductWorkflow.objects.select_related(
+            "product", "workflow", "first_step", "last_step"
+        )
         .prefetch_related("workflow__steps")
         .all()
     )
