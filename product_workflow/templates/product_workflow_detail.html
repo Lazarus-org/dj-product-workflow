@@ -48,7 +48,6 @@
             max-width: 250px;
             word-wrap: break-word;
             overflow-y: auto;
-            max-height: 150px;
         }
         .tooltip.active {
             opacity: 1;
@@ -148,8 +147,23 @@
             const svgGroup = svg.append("g");
 
             const tooltip = document.getElementById("tooltip");
+            let tooltipActive = false;
+            let tooltipTimeout;
 
-            // Arrowhead marker
+            tooltip.addEventListener("mouseover", () => {
+                tooltipActive = true;
+                clearTimeout(tooltipTimeout);
+            });
+
+            tooltip.addEventListener("mouseout", () => {
+                tooltipActive = false;
+                tooltipTimeout = setTimeout(() => {
+                    if (!tooltipActive) {
+                        tooltip.classList.remove("active");
+                    }
+                }, 300);
+            });
+
             svg.append("defs").append("marker")
                 .attr("id", "arrowhead")
                 .attr("viewBox", "0 -5 10 10")
@@ -167,7 +181,6 @@
                 .force("charge", d3.forceManyBody().strength(-500))
                 .force("center", d3.forceCenter(width / 2, height / 2));
 
-            // Draw links
             const link = svgGroup.append("g")
                 .selectAll("line")
                 .data(data.links)
@@ -176,9 +189,25 @@
                 .attr("class", "link")
                 .attr("stroke", "#999")
                 .attr("stroke-width", 2)
-                .attr("marker-end", "url(#arrow)");
+                .attr("marker-end", "url(#arrowhead)")
+                .on("mouseover", (event, d) => {
+                    tooltip.classList.add("active");
+                    tooltip.innerHTML = `<strong>${d.label}</strong><br>${d.condition}`;
+                    tooltipActive = true;
+                    updateTooltipPosition(event);
+                })
+                .on("mousemove", (event) => {
+                    updateTooltipPosition(event);
+                })
+                .on("mouseout", () => {
+                    tooltipActive = false;
+                    tooltipTimeout = setTimeout(() => {
+                        if (!tooltipActive) {
+                            tooltip.classList.remove("active");
+                        }
+                    }, 300);
+                });
 
-            // Draw link labels
             const linkLabels = svgGroup.append("g")
                 .selectAll("text")
                 .data(data.links)
@@ -186,7 +215,15 @@
                 .append("text")
                 .attr("class", "link-label")
                 .attr("dy", 0)
-                .text(d => d.condition ? `${d.label} ${d.condition}` : d.label);
+                .text(d => d.condition ? `${d.label} ${truncateCondition(d.condition)}` : d.label);
+
+            function truncateCondition(condition) {
+                const words = condition.split(" ");
+                if (words.length > 10) {
+                    return words.slice(0, 5).join(" ") + "...";
+                }
+                return condition;
+            }
 
             function getNodeRadius(text) {
                 const tempText = svg.append("text")
@@ -200,7 +237,6 @@
                 return Math.max(bbox.width / 2 + 10, bbox.height / 2 + 10);
             }
 
-            // Draw nodes
             const node = svgGroup.append("g")
                 .selectAll("circle")
                 .data(data.nodes)
@@ -211,22 +247,19 @@
                 .on("mouseover", (event, d) => {
                     tooltip.classList.add("active");
                     tooltip.innerHTML = `<strong>${d.name}</strong><br>${d.description}`;
+                    tooltipActive = true;
+                    updateTooltipPosition(event);
                 })
                 .on("mousemove", (event) => {
-                    // Keep tooltip within boundaries
-                    const tooltipWidth = tooltip.offsetWidth;
-                    const tooltipHeight = tooltip.offsetHeight;
-                    const maxX = window.innerWidth - tooltipWidth - 10;
-                    const maxY = window.innerHeight - tooltipHeight - 10;
-
-                    const posX = Math.min(event.pageX + 10, maxX);
-                    const posY = Math.min(event.pageY + 10, maxY);
-
-                    tooltip.style.left = `${posX}px`;
-                    tooltip.style.top = `${posY}px`;
+                    updateTooltipPosition(event);
                 })
                 .on("mouseout", () => {
-                    tooltip.classList.remove("active");
+                    tooltipActive = false;
+                    tooltipTimeout = setTimeout(() => {
+                        if (!tooltipActive) {
+                            tooltip.classList.remove("active");
+                        }
+                    }, 300);
                 })
                 .on("click", function (event, d) {
                     d3.selectAll(".node").classed("clicked", false);
@@ -239,7 +272,6 @@
                         .on("end", dragended)
                 );
 
-            // Add node labels
             const nodeLabels = svgGroup.append("g")
                 .selectAll("text")
                 .data(data.nodes)
@@ -285,6 +317,19 @@
                 nodeLabels.attr("x", d => d.x)
                     .attr("y", d => d.y);
             });
+
+            function updateTooltipPosition(event) {
+                const tooltipWidth = tooltip.offsetWidth;
+                const tooltipHeight = tooltip.offsetHeight;
+                const maxX = window.innerWidth - tooltipWidth - 10;
+                const maxY = window.innerHeight - tooltipHeight - 10;
+
+                const posX = Math.min(event.pageX + 10, maxX);
+                const posY = Math.min(event.pageY + 10, maxY);
+
+                tooltip.style.left = `${posX}px`;
+                tooltip.style.top = `${posY}px`;
+            }
 
             function dragstarted(event, d) {
                 if (!event.active) simulation.alphaTarget(0.3).restart();
