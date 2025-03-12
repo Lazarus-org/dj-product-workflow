@@ -11,7 +11,7 @@ class DefaultAdminSettings:
 class DefaultViewSettings:
     view_auth_class: str = "django.contrib.auth.mixins.LoginRequiredMixin"
     view_ordering_fields: List[str] = field(
-        default_factory=lambda: ["product", "-created_at"]
+        default_factory=lambda: ["product__name", "-created_at"]
     )
 
 
