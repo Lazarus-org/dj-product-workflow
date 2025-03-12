@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from product_workflow.models import Transition
 from product_workflow.settings.conf import config
 

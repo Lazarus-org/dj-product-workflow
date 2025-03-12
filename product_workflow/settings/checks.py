@@ -4,13 +4,15 @@ from django.core.checks import Error, register
 
 from product_workflow.settings.conf import config
 from product_workflow.validators.config_validators import (
-    validate_optional_path_setting, validate_list_fields,
+    validate_list_fields,
+    validate_optional_path_setting,
 )
 
 
 @register()
 def check_product_workflow_settings(app_configs: Any, **kwargs: Any) -> List[Error]:
-    """Check and validate product workflow settings in the Django configuration.
+    """Check and validate product workflow settings in the Django
+    configuration.
 
     This function performs validation of various product workflow-related settings
     defined in the Django settings. It returns a list of errors if any issues are found.

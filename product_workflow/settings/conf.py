@@ -3,9 +3,7 @@ from typing import Any, List
 from django.conf import settings
 from django.utils.module_loading import import_string
 
-from product_workflow.constants.default_settings import (
-    admin_settings, view_settings,
-)
+from product_workflow.constants.default_settings import admin_settings, view_settings
 from product_workflow.constants.types import DefaultPath, OptionalPaths
 
 

@@ -1,19 +1,19 @@
-from django.db import models
 from django.core.exceptions import ValidationError
+from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from product_workflow.mixins.models.timestamp import TimeStampModel
 
 
 class Transition(TimeStampModel):
-    """
-    Represents a transition between two steps in a workflow.
+    """Represents a transition between two steps in a workflow.
 
     Attributes:
         workflow (Workflow): The Workflow this transition belongs to (auto-set).
         from_step (Step): The step this transition starts from.
         to_step (Step): The step this transition leads to.
         condition (str): An optional condition for this transition.
+
     """
 
     workflow = models.ForeignKey(
@@ -66,8 +66,7 @@ class Transition(TimeStampModel):
         ]
 
     def __str__(self) -> str:
-        """
-        Returns a string representation of the transition.
+        """Returns a string representation of the transition.
 
         The representation follows the format:
             "<from_step_name> -> <to_step_name> (Workflow ID: <workflow_id>)"
@@ -77,6 +76,7 @@ class Transition(TimeStampModel):
 
         Returns:
             str: A human-readable representation of the transition.
+
         """
         from_step_name: str = (
             getattr(self.from_step, "name", "Unknown")
@@ -89,8 +89,8 @@ class Transition(TimeStampModel):
         return f"{from_step_name} -> {to_step_name} (Workflow ID: {self.workflow_id})"
 
     def clean(self) -> None:
-        """
-        Validates and sets the `workflow` based on `from_step` and `to_step`.
+        """Validates and sets the `workflow` based on `from_step` and
+        `to_step`.
 
         Ensures:
         - `from_step` and `to_step` belong to the same `workflow`.
@@ -99,6 +99,7 @@ class Transition(TimeStampModel):
 
         Raises:
             ValidationError: If steps don't belong to the same workflow or if required fields are missing.
+
         """
         # Check if both steps are provided
         if not self.from_step_id or not self.to_step_id:
