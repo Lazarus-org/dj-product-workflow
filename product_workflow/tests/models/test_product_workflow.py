@@ -29,34 +29,11 @@ class TestProductWorkflow:
     - test_unique_constraint: Verifies the database-level unique constraint.
     """
 
-    # def test_str_representation(
-    #     self, product_workflow, product, workflow, step
-    # ):
-    #     """
-    #     Test the __str__ method with a current step assigned.
-    #
-    #     Verifies that the string representation includes product_id, workflow_id,
-    #     and current_step.name in the expected format.
-    #
-    #     Args:
-    #     ----
-    #         product_workflow: Fixture providing a ProductWorkflow instance.
-    #         product: Fixture providing a Product instance.
-    #         workflow: Fixture providing a Workflow instance.
-    #         step: Fixture providing a Step instance.
-    #
-    #     Asserts:
-    #     --------
-    #         The __str__ output matches the expected format.
-    #     """
-    #     expected_str = f"Product ID:{product.id} - Workflow ID:{workflow.id} (Current Step: {step.name})"
-    #     assert str(product_workflow) == expected_str
-
-    def test_str_with_no_current_step(self, product, workflow):
+    def test_str_with_no_first_step(self, product, workflow):
         """
-        Test the __str__ method when no current step is assigned.
+        Test the __str__ method when no first step is assigned.
 
-        Verifies that the string representation defaults to "None" for current_step.
+        Verifies that the string representation defaults to "None" for first_step.
 
         Args:
         ----
@@ -65,12 +42,12 @@ class TestProductWorkflow:
 
         Asserts:
         --------
-            The __str__ output includes "None" for current_step.
+            The __str__ output includes "None" for first_step.
         """
         product_workflow = ProductWorkflow.objects.create(
-            product=product, workflow=workflow, current_step=None
+            product=product, workflow=workflow, first_step=None
         )
-        expected_str = f"Product ID:{product.id} - Workflow ID:{workflow.id} (Current Step: None)"
+        expected_str = f"Product ID:{product.id} - Workflow ID:{workflow.id} (First Step: None)"
         assert str(product_workflow) == expected_str
 
     def test_clean_valid_instance(self, product, workflow):

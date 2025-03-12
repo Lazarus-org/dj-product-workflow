@@ -12,7 +12,7 @@ class ProductWorkflow(TimeStampModel):
     Attributes:
         product (Product): The product linked to this workflow.
         workflow (Workflow): The workflow associated with this product.
-        current_step (Step): The current step in the workflow for this product.
+        first_step (Step): The first step in the workflow for this product.
         created_at (datetime): Auto-generated creation timestamp.
         updated_at (datetime): Auto-generated last modification timestamp.
 
@@ -34,13 +34,13 @@ class ProductWorkflow(TimeStampModel):
         help_text=_("The workflow associated with this product."),
         db_comment="Foreign key reference to the Workflow model.",
     )
-    current_step = models.ForeignKey(
+    first_step = models.ForeignKey(
         "Step",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name=_("Current Step"),
-        help_text=_("The current step in the workflow for this product."),
+        verbose_name=_("First Step"),
+        help_text=_("The first step in the workflow for this product."),
         db_comment="Foreign key reference to the Step model. Can be null if no step is active.",
     )
 
@@ -73,11 +73,9 @@ class ProductWorkflow(TimeStampModel):
 
         """
         current_step_name: str = (
-            getattr(self.current_step, "name", "None")
-            if self.current_step_id
-            else "None"
+            getattr(self.first_step, "name", "None") if self.first_step_id else "None"
         )
-        return f"Product ID:{self.product_id} - Workflow ID:{self.workflow_id} (Current Step: {current_step_name})"
+        return f"Product ID:{self.product_id} - Workflow ID:{self.workflow_id} (First Step: {current_step_name})"
 
     def clean(self) -> None:
         """Validates that a product can only be associated with a workflow
