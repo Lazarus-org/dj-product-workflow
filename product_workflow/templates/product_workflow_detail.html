@@ -61,7 +61,11 @@
             cursor: pointer;
             transition: transform 0.3s ease, fill 0.3s ease, stroke 0.3s ease;
         }
-        .node.current-step {
+        .node.first-step {
+            fill: #b5abb7;
+            stroke: #f1d4f7;
+        }
+        .node.last-step {
             fill: #b5abb7;
             stroke: #f1d4f7;
         }
@@ -115,47 +119,113 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            const data = {
-                nodes: [
-                    {% for step in steps %}
-                        { id: "{{ step.id }}", name: "{{ step.name }}", description: "{{ step.description }}", current: {% if step == product_workflow.current_step %}true{% else %}false{% endif %} },
-                    {% endfor %}
-                ],
-                links: [
-                    {% for transition in transitions %}
-                        {
-                            source: "{{ transition.from_step.id }}",
-                            target: "{{ transition.to_step.id }}",
-                            label: "{{ transition.name }}",
-                            condition: "{{ transition.condition|default:'No condition' }}"
-                        },
-                    {% endfor %}
-                ]
-            };
+        const data = {
+            nodes: [
+                {% for step in steps %}
+                    {
+                        id: "{{ step.id }}",
+                        name: "{{ step.name }}",
+                        description: "{{ step.description }}",
+                        first: {% if step == product_workflow.first_step %}true{% else %}false{% endif %},
+                        last: {% if step == product_workflow.last_step %}true{% else %}false{% endif %},
+                    },
+                {% endfor %}
+            ],
+            links: [
+                {% for transition in transitions %}
+                    {
+                        source: "{{ transition.from_step.id }}",
+                        target: "{{ transition.to_step.id }}",
+                        label: "{{ transition.name }}",
+                        condition: "{{ transition.condition|default:'No condition' }}"
+                    },
+                {% endfor %}
+            ]
+        };
 
-            const width = document.querySelector(".workflow-container").clientWidth;
-            const height = document.querySelector(".workflow-container").clientHeight;
+        const width = document.querySelector(".workflow-container").clientWidth;
+        const height = document.querySelector(".workflow-container").clientHeight;
 
-            const svg = d3.select("#workflow-graph")
-                .attr("viewBox", [0, 0, width, height])
-                .call(
-                    d3.zoom()
-                        .scaleExtent([0.5, 2])
-                        .on("zoom", (event) => svgGroup.attr("transform", event.transform))
-                );
+        const svg = d3.select("#workflow-graph")
+            .attr("viewBox", [0, 0, width, height])
+            .call(
+                d3.zoom()
+                    .scaleExtent([0.5, 2])
+                    .on("zoom", (event) => svgGroup.attr("transform", event.transform))
+            );
 
-            const svgGroup = svg.append("g");
+        const svgGroup = svg.append("g");
 
-            const tooltip = document.getElementById("tooltip");
-            let tooltipActive = false;
-            let tooltipTimeout;
+        const tooltip = document.getElementById("tooltip");
+        let tooltipActive = false;
+        let tooltipTimeout;
 
-            tooltip.addEventListener("mouseover", () => {
+        tooltip.addEventListener("mouseover", () => {
+            tooltipActive = true;
+            clearTimeout(tooltipTimeout);
+        });
+
+        tooltip.addEventListener("mouseout", () => {
+            tooltipActive = false;
+            tooltipTimeout = setTimeout(() => {
+                if (!tooltipActive) {
+                    tooltip.classList.remove("active");
+                }
+            }, 300);
+        });
+
+        svg.append("defs").append("marker")
+            .attr("id", "arrowhead")
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 12)
+            .attr("refY", 0)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5")
+            .attr("fill", "#e53e3e");
+
+        // Set initial position for the first & last node
+        data.nodes.forEach(d => {
+            if (d.first) {
+                d.x = width / 2;
+                d.y = 50;
+                d.fx = width / 2;
+                d.fy = 50;
+            } else if (d.last) {
+                d.x = width / 2;
+                d.y = height - 50;
+                d.fx = width / 2;
+                d.fy = height - 50;
+            }
+        });
+
+        const simulation = d3.forceSimulation(data.nodes)
+            .force("link", d3.forceLink(data.links).id(d => d.id).distance(250))
+            .force("charge", d3.forceManyBody().strength(-500))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("y", d3.forceY().strength(0.1)); // Add gentle downward force for other nodes
+
+        const link = svgGroup.append("g")
+            .selectAll("line")
+            .data(data.links)
+            .enter()
+            .append("line")
+            .attr("class", "link")
+            .attr("stroke", "#999")
+            .attr("stroke-width", 2)
+            .attr("marker-end", "url(#arrowhead)")
+            .on("mouseover", (event, d) => {
+                tooltip.classList.add("active");
+                tooltip.innerHTML = `<strong>${d.label}</strong><br>${d.condition}`;
                 tooltipActive = true;
-                clearTimeout(tooltipTimeout);
-            });
-
-            tooltip.addEventListener("mouseout", () => {
+                updateTooltipPosition(event);
+            })
+            .on("mousemove", (event) => {
+                updateTooltipPosition(event);
+            })
+            .on("mouseout", () => {
                 tooltipActive = false;
                 tooltipTimeout = setTimeout(() => {
                     if (!tooltipActive) {
@@ -164,189 +234,154 @@
                 }, 300);
             });
 
-            svg.append("defs").append("marker")
-                .attr("id", "arrowhead")
-                .attr("viewBox", "0 -5 10 10")
-                .attr("refX", 12)
-                .attr("refY", 0)
-                .attr("markerWidth", 6)
-                .attr("markerHeight", 6)
-                .attr("orient", "auto")
-                .append("path")
-                .attr("d", "M0,-5L10,0L0,5")
-                .attr("fill", "#e53e3e");
+        const linkLabels = svgGroup.append("g")
+            .selectAll("text")
+            .data(data.links)
+            .enter()
+            .append("text")
+            .attr("class", "link-label")
+            .attr("dy", 0)
+            .text(d => d.condition ? `${d.label} ${truncateCondition(d.condition)}` : d.label);
 
-            const simulation = d3.forceSimulation(data.nodes)
-                .force("link", d3.forceLink(data.links).id(d => d.id).distance(250))
-                .force("charge", d3.forceManyBody().strength(-500))
-                .force("center", d3.forceCenter(width / 2, height / 2));
-
-            const link = svgGroup.append("g")
-                .selectAll("line")
-                .data(data.links)
-                .enter()
-                .append("line")
-                .attr("class", "link")
-                .attr("stroke", "#999")
-                .attr("stroke-width", 2)
-                .attr("marker-end", "url(#arrowhead)")
-                .on("mouseover", (event, d) => {
-                    tooltip.classList.add("active");
-                    tooltip.innerHTML = `<strong>${d.label}</strong><br>${d.condition}`;
-                    tooltipActive = true;
-                    updateTooltipPosition(event);
-                })
-                .on("mousemove", (event) => {
-                    updateTooltipPosition(event);
-                })
-                .on("mouseout", () => {
-                    tooltipActive = false;
-                    tooltipTimeout = setTimeout(() => {
-                        if (!tooltipActive) {
-                            tooltip.classList.remove("active");
-                        }
-                    }, 300);
-                });
-
-            const linkLabels = svgGroup.append("g")
-                .selectAll("text")
-                .data(data.links)
-                .enter()
-                .append("text")
-                .attr("class", "link-label")
-                .attr("dy", 0)
-                .text(d => d.condition ? `${d.label} ${truncateCondition(d.condition)}` : d.label);
-
-            function truncateCondition(condition) {
-                if (condition.length > 32) {
-                    return condition.substring(0, 32) + "...";
-                }
-                return condition;
+        function truncateCondition(condition) {
+            if (condition.length > 32) {
+                return condition.substring(0, 32) + "...";
             }
+            return condition;
+        }
 
-            function getNodeRadius(text) {
-                const tempText = svg.append("text")
-                    .attr("class", "node-label")
-                    .attr("visibility", "hidden")
-                    .text(text);
-
-                const bbox = tempText.node().getBBox();
-                tempText.remove();
-
-                return Math.max(bbox.width / 2 + 10, bbox.height / 2 + 10);
-            }
-
-            const node = svgGroup.append("g")
-                .selectAll("circle")
-                .data(data.nodes)
-                .enter()
-                .append("circle")
-                .attr("class", d => `node ${d.current ? "current-step" : ""}`)
-                .attr("r", d => getNodeRadius(d.name))
-                .on("mouseover", (event, d) => {
-                    tooltip.classList.add("active");
-                    tooltip.innerHTML = `<strong>${d.name}</strong><br>${d.description}`;
-                    tooltipActive = true;
-                    updateTooltipPosition(event);
-                })
-                .on("mousemove", (event) => {
-                    updateTooltipPosition(event);
-                })
-                .on("mouseout", () => {
-                    tooltipActive = false;
-                    tooltipTimeout = setTimeout(() => {
-                        if (!tooltipActive) {
-                            tooltip.classList.remove("active");
-                        }
-                    }, 300);
-                })
-                .on("click", function (event, d) {
-                    d3.selectAll(".node").classed("clicked", false);
-                    d3.select(this).classed("clicked", true);
-                })
-                .call(
-                    d3.drag()
-                        .on("start", dragstarted)
-                        .on("drag", dragged)
-                        .on("end", dragended)
-                );
-
-            const nodeLabels = svgGroup.append("g")
-                .selectAll("text")
-                .data(data.nodes)
-                .enter()
-                .append("text")
+        function getNodeRadius(text) {
+            const tempText = svg.append("text")
                 .attr("class", "node-label")
-                .attr("dy", 4)
-                .attr("text-anchor", "middle")
-                .text(d => d.name);
+                .attr("visibility", "hidden")
+                .text(text);
 
-            simulation.on("tick", () => {
-                link.attr("x1", function(d) {
+            const bbox = tempText.node().getBBox();
+            tempText.remove();
+
+            return Math.max(bbox.width / 2 + 10, bbox.height / 2 + 10);
+        }
+
+        const node = svgGroup.append("g")
+        .selectAll("circle")
+        .data(data.nodes)
+        .enter()
+        .append("circle")
+        .attr("class", d => `node ${d.first ? "first-step" : ""} ${d.last ? "last-step" : ""}`)
+        .attr("r", d => getNodeRadius(d.name))
+        .on("mouseover", (event, d) => {
+            tooltip.classList.add("active");
+            tooltip.innerHTML = `<strong>${d.name}</strong><br>${d.description}`;
+            tooltipActive = true;
+            updateTooltipPosition(event);
+        })
+        .on("mousemove", (event) => {
+            updateTooltipPosition(event);
+        })
+        .on("mouseout", () => {
+            tooltipActive = false;
+            tooltipTimeout = setTimeout(() => {
+                if (!tooltipActive) {
+                    tooltip.classList.remove("active");
+                }
+            }, 300);
+        })
+        .on("click", function (event, d) {
+            d3.selectAll(".node").classed("clicked", false);
+            d3.select(this).classed("clicked", true);
+        })
+        .call(
+            d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended)
+        );
+
+        const nodeLabels = svgGroup.append("g")
+            .selectAll("text")
+            .data(data.nodes)
+            .enter()
+            .append("text")
+            .attr("class", "node-label")
+            .attr("dy", 4)
+            .attr("text-anchor", "middle")
+            .text(d => d.name);
+
+        simulation.on("tick", () => {
+            link.attr("x1", function(d) {
+                const sourceNode = d.source;
+                const angle = Math.atan2(d.target.y - sourceNode.y, d.target.x - sourceNode.x);
+                const offset = getNodeRadius(sourceNode.name);
+                return sourceNode.x + offset * Math.cos(angle);
+            })
+                .attr("y1", function(d) {
                     const sourceNode = d.source;
                     const angle = Math.atan2(d.target.y - sourceNode.y, d.target.x - sourceNode.x);
                     const offset = getNodeRadius(sourceNode.name);
-                    return sourceNode.x + offset * Math.cos(angle);
+                    return sourceNode.y + offset * Math.sin(angle);
                 })
-                    .attr("y1", function(d) {
-                        const sourceNode = d.source;
-                        const angle = Math.atan2(d.target.y - sourceNode.y, d.target.x - sourceNode.x);
-                        const offset = getNodeRadius(sourceNode.name);
-                        return sourceNode.y + offset * Math.sin(angle);
-                    })
-                    .attr("x2", function(d) {
-                        const targetNode = d.target;
-                        const angle = Math.atan2(targetNode.y - d.source.y, targetNode.x - d.source.x);
-                        const offset = getNodeRadius(targetNode.name);
-                        return targetNode.x - offset * Math.cos(angle);
-                    })
-                    .attr("y2", function(d) {
-                        const targetNode = d.target;
-                        const angle = Math.atan2(targetNode.y - d.source.y, targetNode.x - d.source.x);
-                        const offset = getNodeRadius(targetNode.name);
-                        return targetNode.y - offset * Math.sin(angle);
-                    });
+                .attr("x2", function(d) {
+                    const targetNode = d.target;
+                    const angle = Math.atan2(targetNode.y - d.source.y, targetNode.x - d.source.x);
+                    const offset = getNodeRadius(targetNode.name);
+                    return targetNode.x - offset * Math.cos(angle);
+                })
+                .attr("y2", function(d) {
+                    const targetNode = d.target;
+                    const angle = Math.atan2(targetNode.y - d.source.y, targetNode.x - d.source.x);
+                    const offset = getNodeRadius(targetNode.name);
+                    return targetNode.y - offset * Math.sin(angle);
+                });
 
-                linkLabels.attr("x", d => (d.source.x + d.target.x) / 2)
-                    .attr("y", d => (d.source.y + d.target.y) / 2);
+            linkLabels.attr("x", d => (d.source.x + d.target.x) / 2)
+                .attr("y", d => (d.source.y + d.target.y) / 2);
 
-                node.attr("cx", d => d.x)
-                    .attr("cy", d => d.y);
+            node.attr("cx", d => d.x)
+                .attr("cy", d => d.y);
 
-                nodeLabels.attr("x", d => d.x)
-                    .attr("y", d => d.y);
-            });
+            nodeLabels.attr("x", d => d.x)
+                .attr("y", d => d.y);
+        });
 
-            function updateTooltipPosition(event) {
-                const tooltipWidth = tooltip.offsetWidth;
-                const tooltipHeight = tooltip.offsetHeight;
-                const maxX = window.innerWidth - tooltipWidth - 10;
-                const maxY = window.innerHeight - tooltipHeight - 10;
+        function updateTooltipPosition(event) {
+            const tooltipWidth = tooltip.offsetWidth;
+            const tooltipHeight = tooltip.offsetHeight;
+            const maxX = window.innerWidth - tooltipWidth - 10;
+            const maxY = window.innerHeight - tooltipHeight - 10;
 
-                const posX = Math.min(event.pageX + 10, maxX);
-                const posY = Math.min(event.pageY + 10, maxY);
+            const posX = Math.min(event.pageX + 10, maxX);
+            const posY = Math.min(event.pageY + 10, maxY);
 
-                tooltip.style.left = `${posX}px`;
-                tooltip.style.top = `${posY}px`;
-            }
+            tooltip.style.left = `${posX}px`;
+            tooltip.style.top = `${posY}px`;
+        }
 
-            function dragstarted(event, d) {
-                if (!event.active) simulation.alphaTarget(0.3).restart();
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            // Only fix position if it's not first or last node
+            if (!d.first && !d.last) {
                 d.fx = d.x;
                 d.fy = d.y;
             }
+        }
 
-            function dragged(event, d) {
+        function dragged(event, d) {
+            // Only allow dragging for non-first and non-last nodes
+            if (!d.first && !d.last) {
                 d.fx = event.x;
                 d.fy = event.y;
             }
+        }
 
-            function dragended(event, d) {
-                if (!event.active) simulation.alphaTarget(0);
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            // Only unfix position if it's not first or last node
+            if (!d.first && !d.last) {
                 d.fx = null;
                 d.fy = null;
             }
-        });
+        }
+    });
     </script>
 </body>
 </html>
