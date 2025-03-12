@@ -18,13 +18,13 @@
         h1 {
             text-align: center;
             color: #FFFFFF;
-            letter-spacing: 0.5px; 
+            letter-spacing: 0.5px;
         }
         h4 {
             text-align: center;
             color: #dcd9d9;
             margin-top: -20px;
-            letter-spacing: 0.5px; 
+            letter-spacing: 0.5px;
             margin-bottom: 30px;
         }
         .workflow-container {
@@ -243,7 +243,7 @@
                 .enter()
                 .append("circle")
                 .attr("class", d => `node ${d.current ? "current-step" : ""}`)
-                .attr("r", d => getNodeRadius(d.name)) 
+                .attr("r", d => getNodeRadius(d.name))
                 .on("mouseover", (event, d) => {
                     tooltip.classList.add("active");
                     tooltip.innerHTML = `<strong>${d.name}</strong><br>${d.description}`;
@@ -305,7 +305,7 @@
                         const targetNode = d.target;
                         const angle = Math.atan2(targetNode.y - d.source.y, targetNode.x - d.source.x);
                         const offset = getNodeRadius(targetNode.name);
-                        return targetNode.y - offset * Math.sin(angle); 
+                        return targetNode.y - offset * Math.sin(angle);
                     });
 
                 linkLabels.attr("x", d => (d.source.x + d.target.x) / 2)
