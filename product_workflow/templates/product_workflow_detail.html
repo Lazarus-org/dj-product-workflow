@@ -4,27 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Workflow Graph - {{ product_workflow.product.name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jomolhari&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1a202c;
-            color: #f7fafc;
+            font-family: "Jomolhari", serif;
+            background: linear-gradient(to right, rgb(95, 38, 142), rgb(151, 31, 151), rgb(225, 55, 148));
             margin: 0;
             padding: 20px;
+            overflow: hidden;
         }
-        h1, h2 {
+        h1 {
             text-align: center;
-            color: #e53e3e;
+            color: #FFFFFF;
+            letter-spacing: 0.5px; 
+        }
+        h4 {
+            text-align: center;
+            color: #dcd9d9;
+            margin-top: -20px;
+            letter-spacing: 0.5px; 
+            margin-bottom: 30px;
         }
         .workflow-container {
-            width: 100%;
+            width: 90%;
             height: 600px;
-            border: 1px solid #4a5568;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #2d3748, #1a202c);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+            border-radius: 20px;
+            box-shadow: 0 0px 10px rgba(0, 0, 0, 0.4);
             overflow: hidden;
-            position: relative;
+            margin: auto;
         }
         .tooltip {
             position: absolute;
@@ -36,30 +45,30 @@
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.2s ease, transform 0.2s ease;
-            max-width: 250px; /* Set a max-width to prevent overflow */
+            max-width: 250px;
             word-wrap: break-word;
             overflow-y: auto;
-            max-height: 150px; /* Limit the height */
+            max-height: 150px;
         }
         .tooltip.active {
             opacity: 1;
             transform: scale(1.1);
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.284);
         }
         .node {
-            fill: #e53e3e;
-            stroke: #c53030;
+            fill: #FBEAFF;
+            stroke: #f1d4f7;
             stroke-width: 2;
             cursor: pointer;
-            transition: transform 0.3s ease, fill 0.3s ease;
+            transition: transform 0.3s ease, fill 0.3s ease, stroke 0.3s ease;
         }
         .node.current-step {
-            fill: #fc8181;
-            stroke: #e53e3e;
+            fill: #FBEAFF;
+            stroke: #f1d4f7;
         }
         .node:hover {
-            fill: #feb2b2;
-            stroke: #fc8181;
-            transform: scale(1.15);
+            fill: #f4cfc7;
+            stroke: #fb7474;
         }
         .node.clicked {
             stroke: #f56565;
@@ -76,26 +85,27 @@
             }
         }
         .link {
-            stroke: #e53e3e;
+            stroke: #8C0606;
             stroke-width: 2;
             marker-end: url(#arrowhead);
         }
         .link-label {
             font-size: 10px;
-            fill: #f7fafc;
+            fill: #f7fcf8;
             text-anchor: middle;
             pointer-events: none;
         }
         .node-label {
             font-size: 12px;
-            fill: #f7fafc;
+            fill: #000000;
             text-anchor: middle;
+            transition: transform 0.3s ease;
         }
     </style>
 </head>
 <body>
     <h1>Product: {{ product_workflow.product.name }}</h1>
-    <h2>Workflow: {{ product_workflow.workflow.name }}</h2>
+    <h4>Workflow: {{ product_workflow.workflow.name }}</h4>
 
     <div class="workflow-container">
         <svg id="workflow-graph" width="100%" height="100%"></svg>
@@ -153,7 +163,7 @@
                 .attr("fill", "#e53e3e");
 
             const simulation = d3.forceSimulation(data.nodes)
-                .force("link", d3.forceLink(data.links).id(d => d.id).distance(150))
+                .force("link", d3.forceLink(data.links).id(d => d.id).distance(250))
                 .force("charge", d3.forceManyBody().strength(-500))
                 .force("center", d3.forceCenter(width / 2, height / 2));
 
@@ -163,7 +173,10 @@
                 .data(data.links)
                 .enter()
                 .append("line")
-                .attr("class", "link");
+                .attr("class", "link")
+                .attr("stroke", "#999")
+                .attr("stroke-width", 2)
+                .attr("marker-end", "url(#arrow)");
 
             // Draw link labels
             const linkLabels = svgGroup.append("g")
@@ -175,6 +188,18 @@
                 .attr("dy", 0)
                 .text(d => d.condition ? `${d.label} ${d.condition}` : d.label);
 
+            function getNodeRadius(text) {
+                const tempText = svg.append("text")
+                    .attr("class", "node-label")
+                    .attr("visibility", "hidden")
+                    .text(text);
+
+                const bbox = tempText.node().getBBox();
+                tempText.remove();
+
+                return Math.max(bbox.width / 2 + 10, bbox.height / 2 + 10);
+            }
+
             // Draw nodes
             const node = svgGroup.append("g")
                 .selectAll("circle")
@@ -182,7 +207,7 @@
                 .enter()
                 .append("circle")
                 .attr("class", d => `node ${d.current ? "current-step" : ""}`)
-                .attr("r", 20)
+                .attr("r", d => getNodeRadius(d.name)) 
                 .on("mouseover", (event, d) => {
                     tooltip.classList.add("active");
                     tooltip.innerHTML = `<strong>${d.name}</strong><br>${d.description}`;
@@ -222,13 +247,34 @@
                 .append("text")
                 .attr("class", "node-label")
                 .attr("dy", 4)
+                .attr("text-anchor", "middle")
                 .text(d => d.name);
 
             simulation.on("tick", () => {
-                link.attr("x1", d => d.source.x)
-                    .attr("y1", d => d.source.y)
-                    .attr("x2", d => d.target.x)
-                    .attr("y2", d => d.target.y);
+                link.attr("x1", function(d) {
+                    const sourceNode = d.source;
+                    const angle = Math.atan2(d.target.y - sourceNode.y, d.target.x - sourceNode.x);
+                    const offset = getNodeRadius(sourceNode.name);
+                    return sourceNode.x + offset * Math.cos(angle);
+                })
+                    .attr("y1", function(d) {
+                        const sourceNode = d.source;
+                        const angle = Math.atan2(d.target.y - sourceNode.y, d.target.x - sourceNode.x);
+                        const offset = getNodeRadius(sourceNode.name);
+                        return sourceNode.y + offset * Math.sin(angle);
+                    })
+                    .attr("x2", function(d) {
+                        const targetNode = d.target;
+                        const angle = Math.atan2(targetNode.y - d.source.y, targetNode.x - d.source.x);
+                        const offset = getNodeRadius(targetNode.name);
+                        return targetNode.x - offset * Math.cos(angle);
+                    })
+                    .attr("y2", function(d) {
+                        const targetNode = d.target;
+                        const angle = Math.atan2(targetNode.y - d.source.y, targetNode.x - d.source.x);
+                        const offset = getNodeRadius(targetNode.name);
+                        return targetNode.y - offset * Math.sin(angle); 
+                    });
 
                 linkLabels.attr("x", d => (d.source.x + d.target.x) / 2)
                     .attr("y", d => (d.source.y + d.target.y) / 2);
