@@ -104,7 +104,29 @@ urlpatterns = [
 # Usage
 
 This section provides a comprehensive guide on how to utilize the package's key features, including the functionality of
-the Django admin panels for managing resource usages.
+the Django admin panels for managing product workflows.
+
+**Hint**: To use the package effectively, in the Admin panel, first create a `Product` instance, then a `Workflow` instance. After that, use `ProductWorkflow` as a through table to assign workflows to products. Create an `Step` and assign it as the first step of a workflow via `ProductWorkflow`, then add multiple steps and transitions to define the `from_step` and `to_step` progression and assign the last step as `last_step` in the workflow to be placed at the bottom of the tree. If you want a node (step) to appear at the top of the workflow visualization, set it as the `first_step` in `ProductWorkflow` to position it as the starting point of the tree. Similarly, if you want a node to appear at the bottom, set it as the `last_step` in `ProductWorkflow` to mark it as the endpoint.
+
+**Example**:
+1. Create a `Product`:
+   - Name: "Product A"
+2. Create a `Workflow`:
+   - Name: "Authentication Process"
+3. Create `Step` instances:
+   - Step 1: "check user info" (will be first step)
+   - Step 2: "insert password"
+   - Step 3: "login verify" (will be last step)
+4. Create a `ProductWorkflow`:
+   - Product: "Product A"
+   - Workflow: "Authentication Process"
+   - First Step: "check user info" (positions "check user info" at the top of the graph)
+   - Last Step: "login verify" (positions "login verify" at the bottom of the graph)
+5. Add `Transition` instances:
+   - Transition 1: From "check user info" to "insert password"
+   - Transition 2: From "insert password" to "login verify"
+
+In the visualization, "check user info" will be fixed at the top, "login verify" at the bottom, and "insert password" will be positioned between them based on the transitions.
 
 ## Admin Site
 
@@ -147,8 +169,6 @@ ensuring a smooth integration with the custom admin interface.
 # Admin Panel
 
 The admin interface in `dj-product-workflow` provides a powerful and intuitive way to manage products, workflows, product-workflow associations, steps, and transitions. Each model is equipped with a customized `ModelAdmin` class to streamline administration tasks. Below are the features and functionalities of each admin interface.
-
-**Hint**: To use the admin effectively, first create a `Product` instance, then a `Workflow` instance. After that, use `ProductWorkflow` as a through table to assign workflows to products. Create a `Step` and assign it as the first step of a workflow via `ProductWorkflow`, then add multiple steps and transitions to define the `from_step` and `to_step` progression.
 
 ---
 
