@@ -6,7 +6,7 @@ requires = [ "poetry-core>=2,<3" ]
 [project]
 name = "dj-product-workflow"
 version = "1.0.0"
-description = ""
+description = "A Django package to empower businesses in managing and visualizing product development workflows."
 readme = "README.md"
 keywords = [ "django", "django product workflow", "product", "product workflow" ]
 
