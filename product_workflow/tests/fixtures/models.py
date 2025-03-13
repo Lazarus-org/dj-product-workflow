@@ -20,6 +20,14 @@ def workflow() -> Workflow:
 
 
 @pytest.fixture
+def another_workflow() -> Workflow:
+    """
+    Fixture creating a sample Workflow instance.
+    """
+    return Workflow.objects.create(name="Another Workflow")
+
+
+@pytest.fixture
 def product_workflow(product, workflow):
     """
     Fixture creating a sample ProductWorkflow instance with steps.
@@ -32,11 +40,10 @@ def product_workflow(product, workflow):
 
 
 @pytest.fixture
-def another_product_workflow(product, workflow):
+def another_product_workflow(product, another_workflow):
     """
     Fixture creating another ProductWorkflow instance.
     """
-    another_workflow = Workflow.objects.create(name="Another Workflow")
     return ProductWorkflow.objects.create(product=product, workflow=another_workflow)
 
 
